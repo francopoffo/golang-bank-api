@@ -9,33 +9,15 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func WriteJson(w http.ResponseWriter, status int, v any) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	return json.NewEncoder(w).Encode(v)
-}
-
-type apiFunc func(http.ResponseWriter, *http.Request) error
-
-type ApiError struct {
-	Error string
-}
-
-func makeHTTPHandler(fn apiFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if err := fn(w, r); err != nil {
-			WriteJson(w, http.StatusBadRequest, ApiError{Error: err.Error()})
-		}
-	}
-}
-
 type APIServer struct {
 	listenAddress string
+	store         Storage
 }
 
-func NewAPIServer(address string) *APIServer {
+func NewAPIServer(address string, store Storage) *APIServer {
 	return &APIServer{
 		listenAddress: address,
+		store:         store,
 	}
 }
 
@@ -80,4 +62,24 @@ func (s *APIServer) handleCreateAccount(w http.ResponseWriter, r *http.Request) 
 
 func (s *APIServer) handleDeleteAccount(w http.ResponseWriter, r *http.Request) error {
 	return nil
+}
+
+func WriteJson(w http.ResponseWriter, status int, v any) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	return json.NewEncoder(w).Encode(v)
+}
+
+type apiFunc func(http.ResponseWriter, *http.Request) error
+
+type ApiError struct {
+	Error string
+}
+
+func makeHTTPHandler(fn apiFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if err := fn(w, r); err != nil {
+			WriteJson(w, http.StatusBadRequest, ApiError{Error: err.Error()})
+		}
+	}
 }
