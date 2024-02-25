@@ -31,6 +31,26 @@ func NewPostgresStore() (*PostgresStore, error) {
 	return &PostgresStore{db: db}, nil
 }
 
+func (s *PostgresStore) Init() error {
+	return s.createAccountTable()
+}
+
+func (s *PostgresStore) createAccountTable() error {
+	query := `CREATE TABLE IF NOT EXISTS accounts (
+		id SERIAL PRIMARY KEY,
+		first_name VARCHAR(50) NOT NULL,
+		last_name VARCHAR(50) NOT NULL,
+		number BIGINT NOT NULL UNIQUE,
+		balance BIGINT NOT NULL
+		created_at TIMESTAMP NOT NULL DEFAULT NOW()
+		updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+	)`
+
+	_, err := s.db.Exec(query)
+
+	return err
+}
+
 func (s *PostgresStore) CreateAccount(account *Account) error {
 	return nil
 }
