@@ -9,9 +9,8 @@ import (
 	"github.com/gorilla/mux"
 )
 
-
 type APIServer struct {
-	listenAddress string 
+	listenAddress string
 	store         Storage // Storage interface for interacting with data store.
 }
 
@@ -20,6 +19,13 @@ func NewAPIServer(address string, store Storage) *APIServer {
 		listenAddress: address, // Initializing APIServer with provided address and store.
 		store:         store,
 	}
+}
+
+// WriteJSON writes JSON response to the client.
+func WriteJSON(w http.ResponseWriter, status int, v interface{}) error {
+	w.Header().Set("Content-Type", "application/json") // Setting response header to indicate JSON content.
+	w.WriteHeader(status)                              // Setting the response status code.
+	return json.NewEncoder(w).Encode(v)                // Encoding provided data as JSON and writing to response.
 }
 
 func (s *APIServer) Run() {
@@ -74,19 +80,12 @@ func (s *APIServer) handleCreateAccount(w http.ResponseWriter, r *http.Request) 
 		return err
 	}
 
-	return WriteJson(w, http.StatusOK, account)
+	return WriteJSON(w, http.StatusOK, account)
 }
 
 // handleDeleteAccount handles DELETE requests for deleting an account.
 func (s *APIServer) handleDeleteAccount(w http.ResponseWriter, r *http.Request) error {
 	return nil
-}
-
-// WriteJSON writes JSON response to the client.
-func WriteJSON(w http.ResponseWriter, status int, v interface{}) error {
-	w.Header().Set("Content-Type", "application/json") // Setting response header to indicate JSON content.
-	w.WriteHeader(status)                               // Setting the response status code.
-	return json.NewEncoder(w).Encode(v)                 // Encoding provided data as JSON and writing to response.
 }
 
 // apiFunc is a function signature for API handlers.
