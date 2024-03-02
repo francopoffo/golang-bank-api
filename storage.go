@@ -32,18 +32,20 @@ func NewPostgresStore() (*PostgresStore, error) {
 	return &PostgresStore{db: db}, nil
 }
 
+// Init initializes the PostgresStore.
 func (s *PostgresStore) Init() error {
 	return s.createAccountTable()
 }
 
+// createAccountTable creates the accounts table if it does not exist.
 func (s *PostgresStore) createAccountTable() error {
 	query := `CREATE TABLE IF NOT EXISTS accounts (
 		id SERIAL PRIMARY KEY,
 		first_name VARCHAR(50) NOT NULL,
 		last_name VARCHAR(50) NOT NULL,
 		number BIGINT NOT NULL UNIQUE,
-		balance BIGINT NOT NULL
-		created_at TIMESTAMP NOT NULL DEFAULT NOW()
+		balance BIGINT NOT NULL,
+		created_at TIMESTAMP NOT NULL DEFAULT NOW(),
 		updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 	)`
 
@@ -85,3 +87,4 @@ func (s *PostgresStore) UpdateAccount(account *Account) error {
 func (s *PostgresStore) GetAccountById(id int) (*Account, error) {
 	return nil, nil
 }
+
