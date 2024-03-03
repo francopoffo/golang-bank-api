@@ -33,7 +33,7 @@ func (s *APIServer) Run() {
 
 	// Registering handlers for specific routes.
 	router.HandleFunc("/account", makeHTTPHandler(s.handleAccount))
-	router.HandleFunc("/account/{id}", makeHTTPHandler(s.handleGetAccount))
+	router.HandleFunc("/account/{id}", makeHTTPHandler(s.handleGetAccountById))
 
 	log.Println("Listening on address", s.listenAddress)
 
@@ -58,12 +58,23 @@ func (s *APIServer) handleAccount(w http.ResponseWriter, r *http.Request) error 
 }
 
 // handleGetAccount handles GET requests for retrieving an account.
-func (s *APIServer) handleGetAccount(w http.ResponseWriter, r *http.Request) error {
+func (s *APIServer) handleGetAccountById(w http.ResponseWriter, r *http.Request) error {
 	id := mux.Vars(r)["id"] // Extracting the "id" parameter from the request URL.
 
 	fmt.Println(id) // Logging the extracted ID.
 
 	return WriteJSON(w, http.StatusOK, &Account{}) // Writing a JSON response with a dummy Account.
+}
+
+// handleGetAccounts handles GET requests for retrieving all accounts.
+func (s *APIServer) handleGetAccount(w http.ResponseWriter, r *http.Request) error {
+	accounts, err := s.store.GetAccounts()
+
+	if err != nil {
+		return err
+	}
+
+	return WriteJSON(w, http.StatusOK, accounts)
 }
 
 // handleCreateAccount handles POST requests for creating an account.
