@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 )
@@ -59,11 +60,18 @@ func (s *APIServer) handleAccount(w http.ResponseWriter, r *http.Request) error 
 
 // handleGetAccount handles GET requests for retrieving an account.
 func (s *APIServer) handleGetAccountById(w http.ResponseWriter, r *http.Request) error {
-	id := mux.Vars(r)["id"] // Extracting the "id" parameter from the request URL.
+	idStr := mux.Vars(r)["id"] // Extracting the "id" parameter from the request URL.
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		return fmt.Errorf("invalid account ID: %s", idStr)
+	}
+	account, err := s.store.GetAccountById(id)
 
-	fmt.Println(id) // Logging the extracted ID.
+	if err != nil {
+		return err
+	}
 
-	return WriteJSON(w, http.StatusOK, &Account{}) // Writing a JSON response with a dummy Account.
+	return WriteJSON(w, http.StatusOK, account) // Writing a JSON response with a dummy Account.
 }
 
 // handleGetAccounts handles GET requests for retrieving all accounts.
@@ -103,7 +111,7 @@ func (s *APIServer) handleDeleteAccount(w http.ResponseWriter, r *http.Request) 
 type apiFunc func(http.ResponseWriter, *http.Request) error
 
 type ApiError struct {
-	Error string
+	Error string `json:"error"`
 }
 
 // makeHTTPHandler wraps an API handler function with error handling.
