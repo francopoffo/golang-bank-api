@@ -45,7 +45,7 @@ func (s *APIServer) Run() {
 // handleAccount handles requests for account operations.
 func (s *APIServer) handleAccount(w http.ResponseWriter, r *http.Request) error {
 	if r.Method == "GET" {
-		return s.handleGetAccount(w, r)
+		return s.handleGetAccount(w)
 	}
 
 	if r.Method == "POST" {
@@ -75,7 +75,7 @@ func (s *APIServer) handleGetAccountById(w http.ResponseWriter, r *http.Request)
 }
 
 // handleGetAccounts handles GET requests for retrieving all accounts.
-func (s *APIServer) handleGetAccount(w http.ResponseWriter, r *http.Request) error {
+func (s *APIServer) handleGetAccount(w http.ResponseWriter) error {
 	accounts, err := s.store.GetAccounts()
 
 	if err != nil {
@@ -104,7 +104,15 @@ func (s *APIServer) handleCreateAccount(w http.ResponseWriter, r *http.Request) 
 
 // handleDeleteAccount handles DELETE requests for deleting an account.
 func (s *APIServer) handleDeleteAccount(w http.ResponseWriter, r *http.Request) error {
-	return nil
+	idStr := mux.Vars(r)["id"]
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		return fmt.Errorf("invalid account ID: %s", idStr)
+	}
+	if err := s.store.DeleteAccount(id); err != nil {
+		return err
+	}
+	return WriteJSON(w, http.StatusOK, nil)
 }
 
 // apiFunc is a function signature for API handlers.
