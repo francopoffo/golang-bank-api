@@ -64,11 +64,12 @@ func (s *APIServer) handleAccount(w http.ResponseWriter, r *http.Request) error 
 
 // handleGetAccount handles GET requests for retrieving an account.
 func (s *APIServer) handleGetAccountById(w http.ResponseWriter, r *http.Request) error {
-	idStr := mux.Vars(r)["id"] // Extracting the "id" parameter from the request URL.
-	id, err := strconv.Atoi(idStr)
+	id, err := getId(r)
+
 	if err != nil {
-		return fmt.Errorf("invalid account ID: %s", idStr)
+		return err
 	}
+
 	account, err := s.store.GetAccountById(id)
 
 	if err != nil {
@@ -108,11 +109,12 @@ func (s *APIServer) handleCreateAccount(w http.ResponseWriter, r *http.Request) 
 
 // handleDeleteAccount handles DELETE requests for deleting an account.
 func (s *APIServer) handleDeleteAccount(w http.ResponseWriter, r *http.Request) error {
-	idStr := mux.Vars(r)["id"]
-	id, err := strconv.Atoi(idStr)
+	id, err := getId(r)
+
 	if err != nil {
-		return fmt.Errorf("invalid account ID: %s", idStr)
+		return err
 	}
+
 	if err := s.store.DeleteAccount(id); err != nil {
 		return err
 	}
@@ -124,12 +126,11 @@ func (s *APIServer) handleUpdateAccount(w http.ResponseWriter, r *http.Request) 
 	if err := json.NewDecoder(r.Body).Decode(updateAccountRequest); err != nil {
 		return err
 	}
-	idStr := mux.Vars(r)["id"]
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		return fmt.Errorf("invalid account ID: %s", idStr)
-	}
+	id, err := getId(r)
 
+	if err != nil {
+		return err
+	}
 	if err := s.store.UpdateAccount(id, updateAccountRequest); err != nil {
 		return err
 	}
@@ -152,4 +153,13 @@ func makeHTTPHandler(fn apiFunc) http.HandlerFunc {
 			WriteJSON(w, http.StatusBadRequest, ApiError{Error: err.Error()})
 		}
 	}
+}
+
+func getId(r *http.Request) (int, error) {
+	idStr := mux.Vars(r)["id"]
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		return 0, fmt.Errorf("invalid account ID: %s", idStr)
+	}
+	return id, nil
 }
