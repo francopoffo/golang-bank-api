@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"database/sql"
+	"errors"
 	"fmt"
 
 	_ "github.com/lib/pq"
@@ -92,19 +94,45 @@ func (s *PostgresStore) DeleteAccount(id int) error {
 }
 
 func (s *PostgresStore) UpdateAccount(id int, account *UpdateAccountRequest) error {
-	query := `UPDATE accounts SET first_name = $1, last_name = $2, updated_at = NOW() WHERE id = $3`
+	// Create a buffer to dynamically build the query
+	var queryBuffer bytes.Buffer
+	queryBuffer.WriteString("UPDATE accounts SET ")
 
-	resp, err := s.db.Exec(
-		query, account.FirstName, account.LastName, id,
-	)
+	// Keep track if any field is updated
+	var updatedFields []interface{}
 
-	if err != nil {
-		return err
+	// Keep track if any field is provided in the request
+	var hasFieldsToUpdate bool
+
+	// Check if first name is provided
+	if account.FirstName != "" {
+		queryBuffer.WriteString("first_name = $1, ")
+		updatedFields = append(updatedFields, account.FirstName)
+		hasFieldsToUpdate = true
 	}
 
-	fmt.Printf("%+v\n", resp)
+	// Check if last name is provided
+	if account.LastName != "" {
+		queryBuffer.WriteString("last_name = $2, ")
+		updatedFields = append(updatedFields, account.LastName)
+		hasFieldsToUpdate = true
+	}
 
-	return nil
+	// Remove trailing comma and space
+	if hasFieldsToUpdate {
+		query := queryBuffer.String()[:queryBuffer.Len()-2] // Remove the last comma and space
+		query += "updated_at = NOW() WHERE id = $3"         // Append the WHERE clause
+
+		// Execute the dynamic query
+		_, err := s.db.Exec(query, append(updatedFields, id)...)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+
+	// If no fields are provided in the request
+	return errors.New("no fields provided for update")
 }
 
 func (s *PostgresStore) GetAccountById(id int) (*Account, error) {

@@ -34,7 +34,7 @@ func (s *APIServer) Run() {
 
 	// Registering handlers for specific routes.
 	router.HandleFunc("/account", makeHTTPHandler(s.handleAccount))
-	router.HandleFunc("/account/{id}", makeHTTPHandler(s.handleGetAccountById))
+	router.HandleFunc("/account/{id}", makeHTTPHandler(s.handleAccountById))
 
 	log.Println("Listening on address", s.listenAddress)
 
@@ -52,6 +52,14 @@ func (s *APIServer) handleAccount(w http.ResponseWriter, r *http.Request) error 
 		return s.handleCreateAccount(w, r)
 	}
 
+	return fmt.Errorf("unsupported method: %s", r.Method)
+}
+
+func (s *APIServer) handleAccountById(w http.ResponseWriter, r *http.Request) error {
+	if r.Method == "GET" {
+		return s.handleGetAccountById(w, r)
+	}
+
 	if r.Method == "DELETE" {
 		return s.handleDeleteAccount(w, r)
 	}
@@ -59,6 +67,7 @@ func (s *APIServer) handleAccount(w http.ResponseWriter, r *http.Request) error 
 	if r.Method == "PATCH" {
 		return s.handleUpdateAccount(w, r)
 	}
+
 	return fmt.Errorf("unsupported method: %s", r.Method)
 }
 
@@ -127,7 +136,6 @@ func (s *APIServer) handleUpdateAccount(w http.ResponseWriter, r *http.Request) 
 		return err
 	}
 	id, err := getId(r)
-
 	if err != nil {
 		return err
 	}
