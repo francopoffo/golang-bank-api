@@ -22,6 +22,12 @@ type CreateAccountRequest struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
+type UpdateAccountRequest struct {
+	FirstName string    `json:"first_name"`
+	LastName  string    `json:"last_name"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
 func NewAccount(firstName, lastName string) *Account {
 	return &Account{
 		FirstName: firstName,

@@ -55,6 +55,10 @@ func (s *APIServer) handleAccount(w http.ResponseWriter, r *http.Request) error 
 	if r.Method == "DELETE" {
 		return s.handleDeleteAccount(w, r)
 	}
+
+	if r.Method == "PATCH" {
+		return s.handleUpdateAccount(w, r)
+	}
 	return fmt.Errorf("unsupported method: %s", r.Method)
 }
 
@@ -110,6 +114,23 @@ func (s *APIServer) handleDeleteAccount(w http.ResponseWriter, r *http.Request) 
 		return fmt.Errorf("invalid account ID: %s", idStr)
 	}
 	if err := s.store.DeleteAccount(id); err != nil {
+		return err
+	}
+	return WriteJSON(w, http.StatusOK, nil)
+}
+
+func (s *APIServer) handleUpdateAccount(w http.ResponseWriter, r *http.Request) error {
+	updateAccountRequest := &UpdateAccountRequest{}
+	if err := json.NewDecoder(r.Body).Decode(updateAccountRequest); err != nil {
+		return err
+	}
+	idStr := mux.Vars(r)["id"]
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		return fmt.Errorf("invalid account ID: %s", idStr)
+	}
+
+	if err := s.store.UpdateAccount(id, updateAccountRequest); err != nil {
 		return err
 	}
 	return WriteJSON(w, http.StatusOK, nil)

@@ -10,7 +10,7 @@ import (
 type Storage interface {
 	CreateAccount(*Account) error
 	DeleteAccount(int) error
-	UpdateAccount(*Account) error
+	UpdateAccount(id int, account *UpdateAccountRequest) error
 	GetAccounts() ([]*Account, error)
 	GetAccountById(int) (*Account, error)
 }
@@ -91,7 +91,19 @@ func (s *PostgresStore) DeleteAccount(id int) error {
 	return nil
 }
 
-func (s *PostgresStore) UpdateAccount(account *Account) error {
+func (s *PostgresStore) UpdateAccount(id int, account *UpdateAccountRequest) error {
+	query := `UPDATE accounts SET first_name = $1, last_name = $2, updated_at = NOW() WHERE id = $3`
+
+	resp, err := s.db.Exec(
+		query, account.FirstName, account.LastName, id,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("%+v\n", resp)
+
 	return nil
 }
 
