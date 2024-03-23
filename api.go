@@ -35,11 +35,21 @@ func (s *APIServer) Run() {
 	// Registering handlers for specific routes.
 	router.HandleFunc("/account", makeHTTPHandler(s.handleAccount))
 	router.HandleFunc("/account/{id}", makeHTTPHandler(s.handleAccountById))
-
+	router.HandleFunc("/transfer", makeHTTPHandler(s.handleTransfer))
 	log.Println("Listening on address", s.listenAddress)
 
 	// Starting the HTTP server with the provided address and router.
 	http.ListenAndServe(s.listenAddress, router)
+}
+
+func (s *APIServer) handleTransfer(w http.ResponseWriter, r *http.Request) error {
+	transferReq := &TransferRequest{}
+	if err := json.NewDecoder(r.Body).Decode(transferReq); err != nil {
+		return err
+	}
+	defer r.Body.Close()
+
+	return WriteJSON(w, http.StatusOK, transferReq)
 }
 
 // handleAccount handles requests for account operations.
