@@ -5,8 +5,11 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
+	"time"
 
+	jwt "github.com/golang-jwt/jwt/v5"
 	"github.com/gorilla/mux"
 )
 
@@ -33,9 +36,9 @@ func (s *APIServer) Run() {
 	router := mux.NewRouter() // Creating a new router instance using gorilla/mux.
 
 	// Registering handlers for specific routes.
-	router.HandleFunc("/account", makeHTTPHandler(s.handleAccount))
-	router.HandleFunc("/account/{id}", makeHTTPHandler(s.handleAccountById))
-	router.HandleFunc("/transfer", makeHTTPHandler(s.handleTransfer))
+	router.HandleFunc("/account", withJWTAuth(makeHTTPHandler(s.handleAccount)))
+	router.HandleFunc("/account/{id}", withJWTAuth(makeHTTPHandler(s.handleAccountById)))
+	router.HandleFunc("/transfer", withJWTAuth(makeHTTPHandler(s.handleTransfer)))
 	log.Println("Listening on address", s.listenAddress)
 
 	// Starting the HTTP server with the provided address and router.
@@ -123,6 +126,14 @@ func (s *APIServer) handleCreateAccount(w http.ResponseWriter, r *http.Request) 
 		return err
 	}
 
+	tokenString, err := createJWTToken(account)
+
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("Token: ", tokenString)
+
 	return WriteJSON(w, http.StatusOK, account)
 }
 
@@ -153,6 +164,44 @@ func (s *APIServer) handleUpdateAccount(w http.ResponseWriter, r *http.Request) 
 		return err
 	}
 	return WriteJSON(w, http.StatusOK, nil)
+}
+
+func createJWTToken(account *Account) (string, error) {
+	claims := jwt.MapClaims{
+		"acountNumber": account.Number,
+		"exp":          time.Now().Add(time.Hour * 72).Unix(),
+	}
+
+	secret := os.Getenv("JWT_SECRET")
+
+	return jwt.NewWithClaims(jwt.SigningMethodHS256, claims).SignedString([]byte(secret))
+}
+
+func withJWTAuth(fn http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		tokenString := r.Header.Get("Authorization")
+
+		_, err := validateJWTToken(tokenString)
+
+		if err != nil {
+			WriteJSON(w, http.StatusUnauthorized, ApiError{Error: err.Error()})
+			return
+		}
+
+		fn(w, r)
+	}
+}
+
+func validateJWTToken(token string) (*jwt.Token, error) {
+	secret := os.Getenv("JWT_SECRET")
+	return jwt.Parse(token, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return []byte(secret), nil
+	})
+
 }
 
 // apiFunc is a function signature for API handlers.
