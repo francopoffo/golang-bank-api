@@ -36,6 +36,7 @@ func (s *APIServer) Run() {
 	router := mux.NewRouter() // Creating a new router instance using gorilla/mux.
 
 	// Registering handlers for specific routes.
+	router.HandleFunc("/login", makeHTTPHandler(s.handleLogin))
 	router.HandleFunc("/account", withJWTAuth(makeHTTPHandler(s.handleAccount), s.store))
 	router.HandleFunc("/account/{id}", withJWTAuth(makeHTTPHandler(s.handleAccountById), s.store))
 	router.HandleFunc("/transfer", withJWTAuth(makeHTTPHandler(s.handleTransfer), s.store))
@@ -53,6 +54,16 @@ func (s *APIServer) handleTransfer(w http.ResponseWriter, r *http.Request) error
 	defer r.Body.Close()
 
 	return WriteJSON(w, http.StatusOK, transferReq)
+}
+
+func (s *APIServer) handleLogin(w http.ResponseWriter, r *http.Request) error {
+	var req LoginRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		return err
+	}
+	defer r.Body.Close()
+
+	return WriteJSON(w, http.StatusOK, req)
 }
 
 // handleAccount handles requests for account operations.

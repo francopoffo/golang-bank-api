@@ -10,6 +10,11 @@ type TransferRequest struct {
 	Amount    int64 `json:"amount"`
 }
 
+type LoginRequest struct {
+	Number   int64  `json:"number"`
+	Password string `json:"password"`
+}
+
 type Account struct {
 	ID        int       `json:"id"`
 	FirstName string    `json:"first_name"`
